@@ -16,7 +16,7 @@
   },
   "imports": {
     "@deno/dnt": "jsr:@deno/dnt@^0.41.3",
-    "@joyautomation/conch": "jsr:@joyautomation/conch@^0.0.22",
+    "@joyautomation/conch": "https://raw.githubusercontent.com/PetroBench/conch/main/index.ts",
     "@joyautomation/coral": "jsr:@joyautomation/coral@^0.0.12",
     "@joyautomation/dark-matter": "jsr:@joyautomation/dark-matter@^0.0.26",
     "@joyautomation/synapse": "jsr:@joyautomation/synapse@^0.0.79",
