@@ -392,13 +392,16 @@ export const createModbusErrorProperties = (
   name: isModbusError(error) ? error.name : undefined,
 });
 
-const timeoutPromise = (ms: number): Promise<ResultFail> =>
-  new Promise((resolve) => {
-    setTimeout(
+function timeoutWithCleanup(ms: number): { promise: Promise<ResultFail>; clear: () => void } {
+  let timerId: ReturnType<typeof setTimeout>;
+  const promise = new Promise<ResultFail>((resolve) => {
+    timerId = setTimeout(
       () => resolve(createFail(`Modbus request timed out after ${ms}ms`)),
       ms,
     );
   });
+  return { promise, clear: () => clearTimeout(timerId) };
+}
 
 export async function readModbus(
   register: number,
@@ -424,12 +427,14 @@ export async function readModbus(
     DISCRETE_INPUT: modbus.client.readDiscreteInputs.bind(modbus.client),
   }
 
+  const timeout = timeoutWithCleanup(3000);
   const result = await Promise.race([
     functionMap[registerType](register, quantity)
       .then((result) => createSuccess(result))
       .catch((error) => createFail(error)),
-    timeoutPromise(3000),
+    timeout.promise,
   ]);
+  timeout.clear();
 
   if (isFail(result)) {
     return result;
@@ -470,13 +475,15 @@ export async function writeModbus(
     COIL: modbus.client.writeCoils.bind(modbus.client),
   }
 
+  const timeout = timeoutWithCleanup(3000);
   const result = await Promise.race([
     // @ts-ignore fix this type problem later
     functionMap[registerType](register, writeModbusFormatValue(value, format, modbus))
       .then(() => createSuccess(undefined))
       .catch((error) => createFail(error)),
-    timeoutPromise(3000),
+    timeout.promise,
   ]);
+  timeout.clear();
 
   if (isFail(result)) {
     return result;
