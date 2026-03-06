@@ -240,8 +240,10 @@ export const updateMetricValues = <
 >(
   plc: Plc<M, S, V>
 ) => {
+  const mqttNodes = Object.values(plc.runtime.mqtt);
+  if (mqttNodes.length === 0) return;
   for (const [key, variable] of Object.entries(plc.runtime.variables)) {
-    for (const node of Object.values(plc.runtime.mqtt)) {
+    for (const node of mqttNodes) {
       const deviceId = Object.keys(node.devices)[0];
       node.devices[deviceId].metrics[key].value = variable.value;
     }

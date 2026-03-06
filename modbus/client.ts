@@ -296,14 +296,18 @@ function isReadRegisterResult(
   return Array.isArray(result.data) && typeof result.data[0] === "number";
 }
 
+// Pre-allocated buffer reused across all readModbusFormatValue calls
+// to avoid creating ~200 ArrayBuffer+DataView pairs per second
+const sharedBuffer = new ArrayBuffer(4);
+const sharedView = new DataView(sharedBuffer);
+
 function readModbusFormatValue(
   result: ReadRegisterResult,
   format: ModbusFormat,
   modbus: Modbus,
 ): number {
   const { data } = result;
-  const buffer = new ArrayBuffer(4);
-  const view = new DataView(buffer);
+  const view = sharedView;
 
   if (format === "INT16") {
     view.setInt16(0, data[0], modbus.reverseBits);
@@ -337,9 +341,12 @@ function readModbusFormatValue(
   throw new Error(`Unsupported format: ${format}`);
 }
 
+// Reuse shared buffer for writes too (single-threaded, no concurrency risk)
+const sharedWriteBuffer = new ArrayBuffer(4);
+const sharedWriteView = new DataView(sharedWriteBuffer);
+
 function writeModbusFormatValue(value: number, format: string, modbus: Modbus): number[] {
-  const buffer = new ArrayBuffer(4)
-  const view = new DataView(buffer)
+  const view = sharedWriteView;
   const data: number[] = []
   if (format === `FLOAT`) {
     view.setFloat32(0, value)
